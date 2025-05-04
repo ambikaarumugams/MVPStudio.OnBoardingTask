@@ -33,6 +33,7 @@
     <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+    <PackageReference Include="Pickles" Version="4.0.3" />
     <PackageReference Include="Reqnroll" Version="2.3.0" />
     <PackageReference Include="Reqnroll.NUnit" Version="2.3.0" />
     <PackageReference Include="Selenium.Support" Version="4.29.0" />

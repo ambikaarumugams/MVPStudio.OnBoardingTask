@@ -3,7 +3,7 @@
   "execution": {
     "parallelExecution": {
       "enabled": true,
-      "maxParallelThreads": 0
+      "maxParallelThreads": 6
      }
   }
 }
