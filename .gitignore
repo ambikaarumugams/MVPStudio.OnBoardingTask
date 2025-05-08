@@ -74,3 +74,4 @@ appsettings.Development.json
 # OS specific
 .DS_Store
 Thumbs.db
+/~$Mars Project.xlsx
