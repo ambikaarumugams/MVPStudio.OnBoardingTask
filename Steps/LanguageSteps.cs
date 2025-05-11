@@ -1,6 +1,5 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
+﻿using OpenQA.Selenium.BiDi.Modules.Log;
 using qa_dotnet_cucumber.Pages;
-using RazorEngine;
 using Reqnroll;
 
 namespace qa_dotnet_cucumber.Steps
@@ -32,102 +31,101 @@ namespace qa_dotnet_cucumber.Steps
             _languagePage.NavigateToTheProfilePage();
         }
 
-        [When("I Add the following New Language and select New Language level:")]   //Adding new language and it's level 
-        public void WhenIAddTheFollowingNewLanguageAndSelectNewLanguageLevel(Table languageTable)
+        [When("I Add the following language and select language level:")]
+        public void WhenIAddTheFollowingLanguageAndSelectLanguageLevel(Table languageTable)    //Get the language table from the feature file
         {
-            _languagePage.DeleteAllLanguages(); //Delete all the languages in the list before adding new
-
-            var languagesToAdd = languageTable.CreateSet<AddLanguage>();
+            var languagesToAddList = languageTable.CreateSet<AddLanguage>();
             var actualAddLanguages = new List<string>();
             var expectedAddLanguages = new List<string>();
-            foreach (var addNewList in languagesToAdd)
+            foreach (var language in languagesToAddList)
             {
-                expectedAddLanguages.Add(addNewList.NewLanguage);
-                _languagePage.AddNewLanguageAndLevel(addNewList.NewLanguage, addNewList.NewLanguageLevel);
-                var successMessageAfterLanguageIsBeingAdded = _languagePage.GetSuccessMessageForAddNew(addNewList.NewLanguage);
-                actualAddLanguages.Add(successMessageAfterLanguageIsBeingAdded);
+                expectedAddLanguages.Add(language.Language);      //add the input language as an expected and add it to the expectedAddLanguages List
+                _languagePage.AddNewLanguageAndLevel(language.Language, language.LanguageLevel);
+                var successMessageAfterLanguageIsBeingAdded = _languagePage.GetSuccessMessageForAddNew(language.Language);
+                actualAddLanguages.Add(successMessageAfterLanguageIsBeingAdded);    // add the success message to the actualAddLanguages List
             }
-            _scenarioContext.Set(actualAddLanguages, "ActualAddLanguages");
-            _scenarioContext.Set(expectedAddLanguages, "ExpectedAddLanguages");
-            _scenarioContext.Set(languageTable,"ExpectedTable");
+            _scenarioContext.Set(actualAddLanguages, "ActualAddLanguages");   //Store it in scenarioContext for assertion 
+            _scenarioContext.Set(expectedAddLanguages, "ExpectedAddLanguages");  //Store it in scenarioContext for assertion
+            _scenarioContext.Set(expectedAddLanguages, "LanguagesToCleanup");    //Store the languages that I've added to retrieve it in hooks to clean up the stored data
+          //  _scenarioContext.Set(languageTable, "ExpectedTable");   // To set values in scenario context as a table for assertion
         }
 
         [When("I should see the languages and verify it has been added successfully")]   //Success message validation
         public void WhenIShouldSeeTheLanguagesAndVerifyItHasBeenAddedSuccessfully()
         {
-            var actualAddLanguages = _scenarioContext.Get<List<string>>("ActualAddLanguages");
-            var expectedAddLanguages = _scenarioContext.Get<List<string>>("ExpectedAddLanguages");
+            var actualLanguages = _scenarioContext.Get<List<string>>("ActualAddLanguages");     //Get the value by using key which I've stored in the previous step
+            var expectedLanguages = _scenarioContext.Get<List<string>>("ExpectedAddLanguages");  //Get the value by using key which I've stored in the previous step
 
-            foreach (var expectedAddList in expectedAddLanguages)
+            foreach (var expectedLanguage in expectedLanguages)     //Assertion one by one
             {
-                Assert.That(actualAddLanguages.Any(actual => actual.Contains(expectedAddList)),
-                Is.True, $"Expected a message contains'{expectedAddList}',but not found");
+                Assert.That(actualLanguages.Any(actual => actual.Contains(expectedLanguage)),
+                Is.True, $"Expected message contains'{expectedLanguage}',but not found");
             }
         }
 
         [Then("I should see the languages listed in my profile and verify it")]   //Table data list validation after adding
         public void ThenIShouldSeeTheLanguagesListedInMyProfileAndVerifyIt()
         {
-            //var actual = _languagePage.GetAllAddedLanguages();
-            //var expectedAddLanguages = _scenarioContext.Get<List<string>>("ExpectedAddLanguages");
-            //Assert.That(actual, Is.EqualTo(expectedAddLanguages), "There is a mismatch");
-            var actual = _languagePage.GetAddedLanguagesAndLevel();
-            var expectedTable = _scenarioContext.Get<Table>("ExpectedTable");
-            expectedTable.CompareToSet(actual);
+            var actual = _languagePage.GetAllAddedLanguages();
+            var expectedAddLanguages = _scenarioContext.Get<List<string>>("ExpectedAddLanguages");
+            Assert.That(actual, Is.EqualTo(expectedAddLanguages), "There is a mismatch");
+            //var actual = _languagePage.GetAddedLanguagesAndLevel();
+            //var expectedTable = _scenarioContext.Get<Table>("ExpectedTable");
+            //expectedTable.CompareToSet(actual);
         }
 
-        [When("I add the following languages and select their levels:")]
+        [When("I add the following languages and select their levels:")]     //To add languages to update the existing language
         public void WhenIAddTheFollowingLanguagesAndSelectTheirLevels(Table addLanguageToEditTable)
         {
-            _languagePage.DeleteAllLanguages();
-            var addLanguageToEdit = addLanguageToEditTable.CreateSet<AddLanguage>();
-            var actualAddLanguages = new List<string>();
-            var expectedAddLanguages = new List<string>();
-            foreach (var addLanguage in addLanguageToEdit)
+            var addLanguageToEditList = addLanguageToEditTable.CreateSet<AddLanguage>();
+            var actualAddLanguagesToEdit = new List<string>();
+            var expectedAddLanguagesToEdit = new List<string>();
+            foreach (var addLanguageToEdit in addLanguageToEditList)
             {
-                expectedAddLanguages.Add(addLanguage.NewLanguage);
-               _languagePage.AddNewLanguageAndLevel(addLanguage.NewLanguage,addLanguage.NewLanguageLevel);
-               var successMessage = _languagePage.GetSuccessMessageForAddNew(addLanguage.NewLanguage);
-               actualAddLanguages.Add(successMessage);
+                expectedAddLanguagesToEdit.Add(addLanguageToEdit.Language);
+                _languagePage.AddNewLanguageAndLevel(addLanguageToEdit.Language, addLanguageToEdit.LanguageLevel);
+                var successMessage = _languagePage.GetSuccessMessageForAddNew(addLanguageToEdit.Language);
+                actualAddLanguagesToEdit.Add(successMessage);
             }
-            _scenarioContext.Set(expectedAddLanguages,"ExpectedLanguagesForAdd");
-            _scenarioContext.Set(actualAddLanguages,"ActualLanguagesForAdd");
+            _scenarioContext.Set(expectedAddLanguagesToEdit, "ExpectedAddLanguagesToEdit");
+            _scenarioContext.Set(actualAddLanguagesToEdit, "ActualAddLanguagesToEdit");
         }
 
-        [Then("I should see the added languages in the profile")]
-        public void ThenIShouldSeeTheAddedLanguagesInTheProfile()
+        [Then("I should see the added language in the profile")]   //Validation for add
+        public void ThenIShouldSeeTheAddedLanguageInTheProfile()
         {
-            var actualList=_scenarioContext.Get<List<string>>("ActualLanguagesForAdd");
-            var expectedList = _scenarioContext.Get<List<string>>("ExpectedLanguagesForAdd");
-            foreach (var expected in expectedList)
+            var actualAddLanguages = _scenarioContext.Get<List<string>>("ActualAddLanguagesToEdit");
+            var expectedAddLanguages = _scenarioContext.Get<List<string>>("ExpectedAddLanguagesToEdit");
+            foreach (var expectedAddLanguage in expectedAddLanguages)
             {
-                Assert.That(actualList.Any(actual => actual.Contains(expected)), Is.True,
-                  $"Expected a message contains'{expected}',but not found");
+                Assert.That(actualAddLanguages.Any(actual => actual.Contains(expectedAddLanguage)), Is.True,
+                  $"Expected a message contains'{expectedAddLanguage}',but not found");
             }
         }
 
-        [Then("I update the following languages if they match the existing ones:")]
+        [Then("I update the following languages if they match the existing ones:")]   //To update the existing languages 
         public void ThenIUpdateTheFollowingLanguagesIfTheyMatchTheExistingOnes(Table updateLanguageTable)
         {
-            var languagesToUpdate = updateLanguageTable.CreateSet<UpdateLanguage>();
-            var actualUpdatedLanguages = new List<string>();
-            var expectedUpdatedLanguages = new List<string>();
-            foreach (var addUpdateList in languagesToUpdate)
+            var languagesToUpdateList = updateLanguageTable.CreateSet<UpdateLanguage>();
+            var actualUpdateLanguages = new List<string>();
+            var expectedUpdateLanguages = new List<string>();
+            foreach (var addUpdateList in languagesToUpdateList)
             {
                 _languagePage.UpdateLanguageAndLevel(addUpdateList.ExistingLanguage, addUpdateList.LanguageToUpdate, addUpdateList.LanguageLevelToUpdate);
                 var successMessageForUpdate = _languagePage.GetSuccessMessageForUpdate(addUpdateList.LanguageToUpdate);
-                Console.WriteLine(successMessageForUpdate);
-                actualUpdatedLanguages.Add(successMessageForUpdate);
-                expectedUpdatedLanguages.Add(addUpdateList.LanguageToUpdate);
+                actualUpdateLanguages.Add(successMessageForUpdate);
+                expectedUpdateLanguages.Add(addUpdateList.LanguageToUpdate);
             }
-            _scenarioContext.Set(actualUpdatedLanguages, "ActualUpdatedLanguages");
-            _scenarioContext.Set(expectedUpdatedLanguages, "ExpectedUpdatedLanguages");
+            _scenarioContext.Set(actualUpdateLanguages, "ActualUpdatedLanguages");
+            _scenarioContext.Set(expectedUpdateLanguages, "ExpectedLanguagesToUpdate");
+            _scenarioContext.Set(expectedUpdateLanguages, "LanguagesToCleanup");   //Clean up for updated languages
         }
+
         [Then("I should see a success message and the updated languages in my profile")]  //success message and table data list validation after updating
         public void ThenIShouldSeeASuccessMessageAndTheUpdatedLanguagesInMyProfile()
         {
             var actualUpdatedLanguages = _scenarioContext.Get<List<string>>("ActualUpdatedLanguages");
-            var expectedUpdatedLanguages = _scenarioContext.Get<List<string>>("ExpectedUpdatedLanguages");
+            var expectedUpdatedLanguages = _scenarioContext.Get<List<string>>("ExpectedLanguagesToUpdate");
 
             foreach (var expectedUpdateLanguage in expectedUpdatedLanguages)
             {
@@ -137,32 +135,32 @@ namespace qa_dotnet_cucumber.Steps
             Assert.That(_languagePage.GetAllUpdatedLanguages(), Is.SupersetOf(expectedUpdatedLanguages), "The language hasn't updated successfully");
         }
 
-       [When("I click the delete icon corresponding to the following languages:")]   //To delete the languages
+        [When("I click the delete icon corresponding to the following languages:")]   //To delete the languages
         public void WhenIClickTheDeleteIconCorrespondingToTheFollowingLanguages(Table deleteLanguageTable)
         {
-            var languagesToDelete = deleteLanguageTable.CreateSet<DeleteLanguage>();
-            var expectedLanguagesToDelete = new List<string>();
-            var actualDeletedLanguages = new List<string>();
-            foreach (var deleteList in languagesToDelete)
+            var languagesToDeleteList = deleteLanguageTable.CreateSet<DeleteLanguage>();
+            var expectedDeleteLanguages = new List<string>();
+            var actualDeleteLanguages = new List<string>();
+            foreach (var languageToDelete in languagesToDeleteList)
             {
-                expectedLanguagesToDelete.Add(deleteList.LanguageToBeDeleted);
-                _languagePage.DeleteSpecificLanguage(deleteList.LanguageToBeDeleted);
-                var deleteSuccessMessage = _languagePage.GetSuccessMessageForDelete(deleteList.LanguageToBeDeleted);
-                actualDeletedLanguages.Add(deleteSuccessMessage);
+                expectedDeleteLanguages.Add(languageToDelete.LanguageToBeDeleted);
+                _languagePage.DeleteSpecificLanguage(languageToDelete.LanguageToBeDeleted);
+                var deleteSuccessMessage = _languagePage.GetSuccessMessageForDelete(languageToDelete.LanguageToBeDeleted);
+                actualDeleteLanguages.Add(deleteSuccessMessage);
             }
-            _scenarioContext.Set(actualDeletedLanguages, "ActualDeletedLanguages");
-            _scenarioContext.Set(expectedLanguagesToDelete, "ExpectedLanguagesToDelete");
+            _scenarioContext.Set(actualDeleteLanguages, "ActualDeleteLanguages");
+            _scenarioContext.Set(expectedDeleteLanguages, "ExpectedDeleteLanguages");
         }
 
-        [Then("I should see a success message for each deleted language")]   //Success message for deleting the languages
+        [Then("I should see a success message for each deleted language")]   //Validation for deleting the languages
         public void ThenIShouldSeeASuccessMessageForEachDeletedLanguage()
         {
-            var actualDeletedLanguages = _scenarioContext.Get<List<string>>("ActualDeletedLanguages");
-            var expectedLanguagesToDelete = _scenarioContext.Get<List<string>>("ExpectedLanguagesToDelete");
-            foreach (var expectedLanguageToDelete in expectedLanguagesToDelete)
+            var actualDeletedLanguages = _scenarioContext.Get<List<string>>("ActualDeleteLanguages");
+            var expectedDeleteLanguages = _scenarioContext.Get<List<string>>("ExpectedDeleteLanguages");
+            foreach (var expectedDeleteLanguage in expectedDeleteLanguages)
             {
-                Assert.That(actualDeletedLanguages.Any(actual => actual.Contains(expectedLanguageToDelete)),
-               Is.True, $"Expected a message contains'{expectedLanguageToDelete}',but not found");
+                Assert.That(actualDeletedLanguages.Any(actual => actual.Contains(expectedDeleteLanguage)),
+               Is.True, $"Expected a message contains'{expectedDeleteLanguage}',but not found");
             }
         }
 
@@ -173,174 +171,355 @@ namespace qa_dotnet_cucumber.Steps
             Assert.That(_languagePage.IsLanguageTableEmpty(), Is.True, "Language table is not empty after deletions.");
         }
 
-        [When("I Add an existing language and select a language level:")]
-        public void WhenIAddAnExistingLanguageAndSelectALanguageLevel(Table languageTable)
+        [When("I add language as {string} and level as {string}")]
+        public void WhenIAddLanguageAsAndLevelAs(string language, string level) //Add the language and level
         {
-            _languagePage.DeleteAllLanguages(); //Delete all the languages in the list before adding new
-
-            var languagesToAdd = languageTable.CreateSet<AddLanguage>();
-            foreach (var addNewList in languagesToAdd)
-            {
-                _languagePage.AddNewLanguageAndLevel(addNewList.NewLanguage, addNewList.NewLanguageLevel);
-            }
-        }
-
-        [When("I click Add New button, leave the language field empty,choose the language level and click the Add button")]
-        public void WhenIClickAddNewButtonLeaveTheLanguageFieldEmptyChooseTheLanguageLevelAndClickTheAddButton()
-        {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.LeaveTheLanguageFieldEmptyForAdd();
-        }
-
-        [When("I click Add New button, enter the language field, not choosing the language level and click the Add button")]
-        public void WhenIClickAddNewButtonEnterTheLanguageFieldNotChoosingTheLanguageLevelAndClickTheAddButton()
-        {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.NotChoosingLanguageLevelForAdd();
-        }
-
-        [When("I click Add New button, empty the language field, not choosing the language level and click the Add button")]
-        public void WhenIClickAddNewButtonEmptyTheLanguageFieldNotChoosingTheLanguageLevelAndClickTheAddButton()
-        {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.LeaveTheLanguageFieldEmptyAndNotChoosingLanguageLevelForAdd();
-        }
-
-        [When("I add language {string} and it's level {string}")]
-        public void WhenIAddLanguageAndItsLevel(string language, string level)
-        {
-            _languagePage.DeleteAllLanguages();
             _languagePage.AddNewLanguageAndLevel(language, level);
-            Thread.Sleep(3000);
+            var successMessage = _languagePage.GetSuccessMessageForAddNew(language);
+            Console.WriteLine(successMessage);
+            _scenarioContext.Set(new List<string>{language},"ActualMessage");       //I'm storing this to clean up in different step
         }
 
-        [When("I click edit icon of {string}, leave the language field empty,choose the language level and click the Update button")]
-        public void WhenIClickEditIconOfLeaveTheLanguageFieldEmptyChooseTheLanguageLevelAndClickTheUpdateButton(string existingLanguage)
+        [When("when I update the language and language level:")]       //Update the existing language and select different language level
+        public void WhenWhenIUpdateTheLanguageAndLanguageLevel(Table updateExistingLanguageAndDifferentLevelTable)
         {
-            _languagePage.LeaveTheLanguageFieldEmptyForUpdate(existingLanguage);
+            var updateExistingLanguageAndLevel = updateExistingLanguageAndDifferentLevelTable.CreateInstance<UpdateLanguage>();
+            var actualSameLanguageAndDifferentLevelToUpdate = new List<string>();
+            var expectedSameLanguageAndDifferentLevelForUpdate = new List<string>();
+
+            _languagePage.UpdateLanguageAndLevel(updateExistingLanguageAndLevel.ExistingLanguage, updateExistingLanguageAndLevel.LanguageToUpdate, updateExistingLanguageAndLevel.LanguageLevelToUpdate);
+            expectedSameLanguageAndDifferentLevelForUpdate.Add(updateExistingLanguageAndLevel.LanguageToUpdate);
+            var successMessage = _languagePage.GetSuccessMessageForUpdate(updateExistingLanguageAndLevel.LanguageToUpdate);
+            actualSameLanguageAndDifferentLevelToUpdate.Add(successMessage);
+
+            _scenarioContext.Set(actualSameLanguageAndDifferentLevelToUpdate, "ActualSameLanguageAndDifferentLevelForUpdate");
+            _scenarioContext.Set(expectedSameLanguageAndDifferentLevelForUpdate, "ExpectedSameLanguageAndDifferentLevelForUpdate");
+            _scenarioContext.Set(expectedSameLanguageAndDifferentLevelForUpdate, "LanguagesToCleanup");    //Clean up
         }
 
-        [When("I click edit icon of {string}, enter the language field, not choosing the language level and click the Update button")]
-        public void WhenIClickEditIconOfEnterTheLanguageFieldNotChoosingTheLanguageLevelAndClickTheUpdateButton(string existingLanguage)
+        [Then("I should see the success message and updated language in my profile")]     //Success message for update the same language and different level
+        public void ThenIShouldSeeTheSuccessMessageAndUpdatedLanguageInMyProfile()
         {
-            _languagePage.NotChoosingLanguageLevelForUpdate(existingLanguage);
+            var actualList = _scenarioContext.Get<List<string>>("ActualSameLanguageAndDifferentLevelForUpdate");
+            var expectedList = _scenarioContext.Get<List<string>>("ExpectedSameLanguageAndDifferentLevelForUpdate");
+            Console.WriteLine(expectedList);
+            var actualMessage = actualList.FirstOrDefault();
+            var expectedMessage = expectedList.FirstOrDefault();
+            Assert.That(actualMessage.Contains(expectedMessage), $"Expected Message '{expectedMessage}' hasn't updated, but got '{actualMessage}'");
         }
 
-        [When("I click edit icon of {string}, empty the language field, not choosing the language level and click the Update button")]
-        public void WhenIClickEditIconOfEmptyTheLanguageFieldNotChoosingTheLanguageLevelAndClickTheUpdateButton(string existingLanguage)
+        [When("I try to add a language {string} with level {string}")]     //Add invalid languages like random strings, numbers, special characters and empty space
+        public void WhenITryToAddALanguageWithLevel(string language, string level)
         {
-            _languagePage.LeaveTheLanguageFieldEmptyAndNotChoosingLanguageLevelForUpdate(existingLanguage);
+
+            if (language == "<space>")    //Condition for empty space
+            {
+                language = "    ";
+            }
+
+            _languagePage.AddNewLanguageAndLevel(language, level);
+            var successMessage = _languagePage.GetSuccessMessageForAddNew(language);
+            _scenarioContext.Set(successMessage, "ActualLanguages");
+            _scenarioContext.Set(new List<string> { language }, "LanguagesToCleanup");  //Clean up 
         }
 
-        [Then("I should see {string} error message")]
-        public void ThenIShouldSeeErrorMessage(string error)
+        [When("I add a language with {int} characters and level {string}")]     //Destructive testing to add language
+        public void WhenIAddALanguageWithCharactersAndLevel(int length, string level)
         {
-            Assert.That(_languagePage.IsErrorMessageDisplayed(error), Is.True, $"Error Message '{error}' shouldn't be displayed");
+            var longLanguageName = new string('a', length);
+            _languagePage.PassingHugeInputUsingJavaScript(longLanguageName,level);
+            var successMessage = _languagePage.GetSuccessMessageForAddNew(longLanguageName);
+            _scenarioContext.Set(successMessage, "ActualLanguages");
+            _scenarioContext.Set(new List<string> { longLanguageName }, "LanguagesToCleanup");
         }
 
-        [When("I click Add New button, enter the language {string} and it's level {string}")]
+        [Then("I should see the error message {string}")]   //Validation for invalid languages
+        public void ThenIShouldSeeTheErrorMessage(string expected)
+        {
+            var actualLanguages = _scenarioContext.Get<string>("ActualLanguages");
+            Assert.That(actualLanguages.Contains(expected), Is.True, $"Expected message contains '{expected}', but got '{actualLanguages}'");
+        }
+
+        [When("I click Add New button, enter the language {string} and it's level {string}")]    //To cancel the add language and level
         public void WhenIClickAddNewButtonEnterTheLanguageAndItsLevel(string languageToCancel, string levelToCancel)
         {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.EnterNewLanguageAndLevelToAdd(languageToCancel, levelToCancel);
+            _languagePage.EnterLanguageAndLevelToCancelAdd(languageToCancel, levelToCancel);
         }
 
-        [Then("I should able to Cancel the operation and verify that the language {string} shouldn't be added")]
+        [Then("I should able to Cancel the operation and verify that the language {string} shouldn't be added")]   //Validation message for cancel
         public void ThenIShouldAbleToCancelTheOperationAndVerifyThatTheLanguageShouldntBeAdded(string language)
         {
             _languagePage.ClickCancelButton();
             Assert.That(_languagePage.IsLanguageNotAdded(language), Is.True, $"{language} is added!");
         }
 
-        [When("I click edit icon of {string} and Update level to {string} and level to {string}")]
-        public void WhenIClickEditIconOfAndUpdateLevelToAndLevelTo(string languageToUpdate, string language, string level)
+        [When("I add language {string} and it's level {string}")]
+        public void WhenIAddLanguageAndItsLevel(string language, string level)
         {
-            _languagePage.EnterLanguageAndLevelToUpdate(languageToUpdate, language, level);
+            _languagePage.AddNewLanguageAndLevel(language, level);
+            _scenarioContext.Set(new List<string>{language},"LanguagesToCleanup");
         }
 
-        [When("I click cancel")]
+        [When("I click edit icon of {string} and Update level to {string} and level to {string}")]    //To cancel the update
+        public void WhenIClickEditIconOfAndUpdateLevelToAndLevelTo(string languageToUpdate, string language, string level)
+        {
+            _languagePage.EnterLanguageAndLevelToCancelForUpdate(languageToUpdate, language, level);
+        }
+
+        [When("I click cancel")]      //Click cancel update 
         public void WhenIClickCancel()
         {
             _languagePage.ClickCancelUpdate();
         }
 
-        [Then("the language {string} should remain unchanged with level {string}")]
+        [Then("the language {string} should remain unchanged with level {string}")]   //Validation for cancel update
         public void ThenTheLanguageShouldRemainUnchangedWithLevel(string language, string level)
         {
-           Assert.That(_languagePage.GetLevelOfLanguage(language), Is.EqualTo(level), $"{language} is updated!");
+            Assert.That(_languagePage.GetLevelOfLanguage(language), Is.EqualTo(level), $"{language} update hasn't cancelled!");
         }
 
-        [Then("I should able to Cancel the operation and verify that no changes has happened")]
+        [Then("I should able to Cancel the operation and verify that no changes has happened")]   //Validation for cancel update
         public void ThenIShouldAbleToCancelTheOperationAndVerifyThatNoChangesHasHappened()
         {
             Assert.That(_languagePage.IsCancelButtonNotDisplayed(), Is.True, $"Cancel button is Displayed!");
         }
-
-        [When("I update the language {string} with same value")]
-        public void WhenIUpdateTheLanguageWithSameValue(string newLanguage)
-        {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.AddNewLanguageAndLevel(newLanguage, "Basic");
-            _languagePage.UpdateLanguageAndLevelWithSameValue(newLanguage, newLanguage);
-        }
-        [When("I want to add language as {string} and level as {string} when the session is expired")]
+        
+        [When("I want to add language as {string} and level as {string} when the session is expired")]  //Try to add a language when the session is expired
         public void WhenIWantToAddLanguageAsAndLevelAsWhenTheSessionIsExpired(string languageToAdd, string levelToAdd)
         {
-            _languagePage.DeleteAllLanguages();
             _languagePage.ExpireSession();
             _languagePage.AddNewLanguageAndLevel(languageToAdd, levelToAdd);
         }
 
-        [When("I add language as {string} and level as {string}")]
-        public void WhenIAddLanguageAsAndLevelAs(string oldLanguage, string oldLevel)
+        [When("I add language as {string} and level as {string} to update")]    //Add language to update when the session is expired
+        public void WhenIAddLanguageAsAndLevelAsToUpdate(string language, string level)
         {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.AddNewLanguageAndLevel(oldLanguage, oldLevel);
-
+            _languagePage.AddNewLanguageAndLevel(language, level);
+            _scenarioContext.Set(new List<string> { language }, "LanguagesToCleanup");
         }
 
-        [When("I want to update language the existing language as{string}, language to update as {string},and level to update as {string} when the session is expired")]
+        [When("I want to update language the existing language as{string}, language to update as {string},and level to update as {string} when the session is expired")]  //Try to update when session expired
         public void WhenIWantToUpdateLanguageTheExistingLanguageAsLanguageToUpdateAsAndLevelToUpdateAsWhenTheSessionIsExpired(string existingLanguage, string languageToUpdate, string levelToUpdate)
         {
             _languagePage.ExpireSession();
             _languagePage.UpdateLanguageAndLevel(existingLanguage, languageToUpdate, levelToUpdate);
-        }
-        [When("I add language {string} and level as {string}")]
-        public void WhenIAddLanguageAndLevelAs(string language, string level)
-        {
-            _languagePage.DeleteAllLanguages();
-            _languagePage.AddNewLanguageAndLevel(language, level);
+            _languagePage.ClickCancelUpdate();    //Cancel the update so that we can do clean up for the existing language
         }
 
-        [When("I want to delete language {string} when the session is expired")]
+        [When("I add language {string} and level as {string} to delete")]   //Add Language to delete when the session is expired
+        public void WhenIAddLanguageAndLevelAsToDelete(string language, string level)
+        {
+            _languagePage.AddNewLanguageAndLevel(language, level);
+            _scenarioContext.Set(new List<string> { language }, "LanguagesToCleanup");  //Clean up
+        }
+
+        [When("I want to delete language {string} when the session is expired")] //Try to delete the language when session expired
         public void WhenIWantToDeleteLanguageWhenTheSessionIsExpired(string languageToDelete)
         {
             _languagePage.ExpireSession();
             _languagePage.DeleteSpecificLanguage(languageToDelete);
         }
 
-        [When("I try to add a language {string} with level {string}")]
-        public void WhenITryToAddALanguageWithLevel(string language, string level)
+        [Then("I should see {string} error message")]    //Validation for session expired
+        public void ThenIShouldSeeErrorMessage(string error)
         {
-            _languagePage.DeleteAllLanguages();
-           
-            _languagePage.AddNewLanguageAndLevel(language,level);
+            Assert.That(_languagePage.IsErrorMessageDisplayed(error), Is.True, $"Error Message '{error}' shouldn't be displayed");
         }
 
-        [Then("I should see the error message {string}")]
-        public void ThenIShouldSeeTheErrorMessage(string p0)
+        [When("I add the languages {string} and it's level {string}in different combinations")]  //Add languages and level by leaving either one or both the fields empty
+        public void WhenIAddTheLanguagesAndItsLevelInDifferentCombinations(string language, string level)
         {
-            throw new PendingStepException();
+            _languagePage.LeaveTheLanguageAndLevelEmptyWithCombinationsForAdd(language, level);
+            var actualMessage = _languagePage.GetErrorMessage();
+            _scenarioContext.Set(actualMessage, "ActualMessage");
         }
 
+        [When("I add the language as {string} and level as {string}")]
+        public void WhenIAddTheLanguageAsAndLevelAs(string language, string level) //Add language to either leave the language or level field empty and both
+        {
+            _languagePage.AddNewLanguageAndLevel(language, level);
+        }
+
+        [When("I update existing language {string} to {string} with level {string}")] //Update languages and level by leaving either one or both the fields empty
+        public void WhenIUpdateExistingLanguageToWithLevel(string existingLanguage, string languageToUpdate, string levelToUpdate)
+        {
+            _languagePage.LeaveTheLanguageAndLevelEmptyWithCombinationsForUpdate(existingLanguage, languageToUpdate, levelToUpdate);
+            var actualMessage = _languagePage.GetErrorMessage();
+            _languagePage.ClickCancelUpdate();
+            _scenarioContext.Set(actualMessage,"ActualMessage");
+            _scenarioContext.Set(new List<string> {existingLanguage},"LanguagesToCleanup");     //To clean up existing language
+        }
+
+        [Then("I should see the {string}")]     //Validation for expected error message
+        public void ThenIShouldSeeThe(string errorMessage)
+        {
+            var actualMessage = _scenarioContext.Get<string>("ActualMessage");
+            Assert.That(actualMessage.Contains(errorMessage), Is.True, $"Expected message contains {errorMessage}, but got {actualMessage}");
+        }
+
+        [When("I try to add huge language name of length {int} and language level as {string}")]   //Huge language name
+        public void WhenITryToAddHugeLanguageNameOfLengthAndLanguageLevelAsBasic(int length, string level)
+        {
+            string hugeLanguageName = new string('e', length);
+            _languagePage.AddNewLanguageAndLevel(hugeLanguageName, level);
+            var successMessage = _languagePage.GetSuccessMessageForAddNew(hugeLanguageName);
+            _scenarioContext["ActualMessage"] = successMessage;
+            _scenarioContext.Set(new List<string> { hugeLanguageName }, "LanguagesToCleanup");
+        }
+
+        [Then("I should see warning message as {string}")]    //Validation for huge language
+        public void ThenIShouldSeeWarningMessageAs(string expected)
+        {
+            var actualMessage = _scenarioContext.Get<string>("ActualMessage");
+            Assert.That(actualMessage.Contains(expected), Is.True, $"Expected message contains '{expected}', but got '{actualMessage}'");
+        }
+
+        [When("I update the following languages if they match the existing ones:")]     //Update Invalid language 
+        public void WhenIUpdateTheFollowingLanguagesIfTheyMatchTheExistingOnes(Table updateInvalidLanguageTable)
+        {
+            var updateInvalidLanguagesList = updateInvalidLanguageTable.CreateSet<UpdateLanguage>();
+            var actualLanguages = new List<string>();
+            var expectedLanguages = new List<string>();
+            foreach (var updateInvalidLanguage in updateInvalidLanguagesList)
+            {
+                if (string.Equals(updateInvalidLanguage.LanguageToUpdate, "<space>", StringComparison.OrdinalIgnoreCase))
+                {
+                    updateInvalidLanguage.LanguageToUpdate = "   ";
+                }
+                expectedLanguages.Add(updateInvalidLanguage.LanguageToUpdate);
+                _languagePage.UpdateLanguageAndLevel(updateInvalidLanguage.ExistingLanguage, updateInvalidLanguage.LanguageToUpdate, updateInvalidLanguage.LanguageLevelToUpdate);
+                var successMessageForUpdate = _languagePage.GetSuccessMessageForUpdate(updateInvalidLanguage.LanguageToUpdate);
+                actualLanguages.Add(successMessageForUpdate);
+            }
+            _scenarioContext.Set(actualLanguages, "ActualLanguages");
+            _scenarioContext.Set(expectedLanguages, "LanguagesToCleanup");  //Clean up the updated languages
+        }
+
+        [Then("I should see the {string} message")]
+        public void ThenIShouldSeeTheMessage(string expected)
+        {
+            var actualList = _scenarioContext.Get<List<string>>("ActualLanguages");
+            foreach (var actual in actualList)       //Multiple languages in the list. So, using foreach loop for validation 
+            {
+                Assert.That(actual.Contains(expected), Is.True,
+                    $"Invalid language name was accepted '{actual}', not found {expected} error message");
+            }
+        }
+
+        [When("when I add the same language and choose different language level")]  //Passing same language and different level (for step 1 to add language it shares different step)
+        public void WhenWhenIAddTheSameLanguageAndChooseDifferentLanguageLevel(Table sameLanguageDifferentLevelTable)
+        {
+            var cleanUp = _scenarioContext.Get<List<string>>("ActualMessage");   //I retrieve the language to be cleaned up from the previous step (step 1)
+            var sameLanguageDifferentLevel = sameLanguageDifferentLevelTable.CreateInstance<AddLanguage>();
+            _languagePage.AddNewLanguageAndLevel(sameLanguageDifferentLevel.Language, sameLanguageDifferentLevel.LanguageLevel);
+            var message = _languagePage.GetErrorMessage();  //When I add the same language second time it will show error message
+            Console.WriteLine(message);
+            _scenarioContext.Set(message, "Actual");  //I'm storing it for validation
+            _scenarioContext.Set(cleanUp, "LanguagesToCleanup");
+        }
+
+        [When("when I add the same language and choose same language level")]     
+        public void WhenWhenIAddTheSameLanguageAndChooseSameLanguageLevel(Table sameLanguageSameLevelTable)
+        {
+            var cleanUp = _scenarioContext.Get<List<string>>("ActualMessage");   //I retrieve the language to be cleaned up from the previous step (step 1)
+            var sameLanguageSameLevel = sameLanguageSameLevelTable.CreateInstance<AddLanguage>();
+            _languagePage.AddNewLanguageAndLevel(sameLanguageSameLevel.Language, sameLanguageSameLevel.LanguageLevel);
+            var message = _languagePage.GetErrorMessage();  //When I add the same language second time it will show error message
+            Console.WriteLine(message);
+            _scenarioContext.Set(message, "Actual");  //I'm storing it for validation
+            _scenarioContext.Set(cleanUp, "LanguagesToCleanup");
+        }
+
+        [When("when I update the same language and same language level:")]
+        public void WhenWhenIUpdateTheSameLanguageAndSameLanguageLevel(Table sameLanguageSameLevelForUpdateTable)
+        {
+            var cleanUp = _scenarioContext.Get<List<string>>("ActualMessage");   //I retrieve the language to be cleaned up from the previous step (step 1)
+            var sameLanguageSameLevel = sameLanguageSameLevelForUpdateTable.CreateInstance<UpdateLanguage>();
+            _languagePage.UpdateLanguageAndLevel(sameLanguageSameLevel.ExistingLanguage,sameLanguageSameLevel.LanguageToUpdate,sameLanguageSameLevel.LanguageLevelToUpdate);
+            var message = _languagePage.GetErrorMessage();  //When I add the same language second time it will show error message
+            Console.WriteLine(message);
+            _languagePage.ClickCancelUpdate();  //I got no such element exception for clean up. When I click the cancel update button, I could see the added language list.
+            _scenarioContext.Set(message, "Actual");  //I'm storing it for validation
+            _scenarioContext.Set(cleanUp, "LanguagesToCleanup");
+        }
+
+        [Then("I should able to see the {string} in my profile")]
+        public void ThenIShouldAbleToSeeTheInMyProfile(string expectedMessage)
+        {
+            var actual = _scenarioContext.Get<string>("Actual");
+            Console.WriteLine(actual);
+            Assert.That(actual, Is.EqualTo(expectedMessage), $"Expected message {expectedMessage} isn't found");
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //[When("I Add an existing language and select a language level:")]
+        //public void WhenIAddAnExistingLanguageAndSelectALanguageLevel(Table languageTable)
+        //{
+        //    _languagePage.DeleteAllLanguages(); //Delete all the languages in the list before adding new
+
+        //    var languagesToAdd = languageTable.CreateSet<AddLanguage>();
+        //    foreach (var addNewList in languagesToAdd)
+        //    {
+        //        _languagePage.AddNewLanguageAndLevel(addNewList.Language, addNewList.LanguageLevel);
+        //    }
+        //}
+
+        
+        //[When("I click edit icon of language, and update the languages {string},choose the language level {string} and click the Update button")]
+        //public void WhenIClickEditIconOfLanguageAndUpdateTheLanguagesChooseTheLanguageLevelAndClickTheUpdateButton(string languageToUpdate, string languageLevelToUpdate)
+        //{
+        //  Console.WriteLine("Hi");   
+        //}
+
+
+       
+
+
+        //[When("I add language {string} and level as {string}")]
+        //public void WhenIAddLanguageAndLevelAs(string language, string level)
+        //{
+        //    _languagePage.DeleteAllLanguages();
+        //    _languagePage.AddNewLanguageAndLevel(language, level);
+        //}
+
+
+
+
+        
+        //[When("I update existing language {string} with {int} characters and level {string}")]
+        //public void WhenIUpdateExistingLanguageWithCharactersAndLevel(string existingLanguage, int length, string level)
+        //{
+        //    var longLanguageName = new string('a', length);
+        //    _languagePage.PassingHugeInputUsingJavaScriptForUpdate(existingLanguage, longLanguageName, level);
+        //    var successMessage = _languagePage.GetSuccessMessageForUpdate(longLanguageName);
+        //    _scenarioContext["ActualMessage"] = successMessage;
+        //}
 
     }
 }
 
 public class AddLanguage    //Property class to add language
 {
-    public string NewLanguage { get; set; }
-    public string NewLanguageLevel { get; set; }
+    public string Language { get; set; }
+    public string LanguageLevel { get; set; }
 }
 
 public class UpdateLanguage    //Property class to update language

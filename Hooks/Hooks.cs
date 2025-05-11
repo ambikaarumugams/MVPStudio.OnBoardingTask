@@ -103,11 +103,52 @@ namespace qa_dotnet_cucumber.Hooks
         }
 
         [AfterScenario]
-        public void AfterScenario()
+        public void CleanUpAfterScenario(ScenarioContext scenarioContext, FeatureContext featureContext)
         {
-            var driver = _objectContainer.Resolve<IWebDriver>();
-            driver?.Quit();
-            Console.WriteLine($"Finished scenario on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+            try
+            {
+                try
+                {
+                    if (featureContext.FeatureInfo.Tags.Contains("language"))
+                    {
+                        if (scenarioContext.TryGetValue("LanguagesToCleanup", out List<string>? languages))
+                        {
+                            if (languages != null && languages.Any())
+                            {
+                                    var _languagePage = _objectContainer.Resolve<LanguagePage>();
+                                    foreach (var language in languages)
+                                    {
+                                        _languagePage.DeleteSpecificLanguage(language);
+                                    }
+                                    Console.WriteLine($"Deleted {languages.Count} languages for this scenario");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Clean up skipped: Language list is empty.");
+                            }
+                        }
+                       
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Clean up failed:{ex.Message}");
+                }
+
+                var driver = _objectContainer.Resolve<IWebDriver>();
+                if (driver != null)
+                {
+                    Console.WriteLine($"Cleaning up on Thread{Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+                    driver?.Quit();
+                    driver?.Dispose();
+                    Console.WriteLine(
+                        $"Finished scenario on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Clean up failed:{ex.Message}");
+            }
         }
 
         [AfterTestRun]

@@ -1,38 +1,53 @@
-﻿Feature: LanguageNegative
+﻿@language
+Feature: LanguageNegative
 
 As a user, I shouldn't be able to add languages and it's level
 
 Background:
 	Given I navigate to the profile page as a registered user
 
-@negative
-Scenario: As a user, I shouldn't able to add languages and it's level by giving language field empty
-	When I click Add New button, leave the language field empty,choose the language level and click the Add button
-	Then I should see "Please enter language and level" error message
+@negative @invalid
+Scenario Outline: As a user, I want to add language with invalid input
+	When I try to add a language "<Language>" with level "<LanguageLevel>"
+	Then I should see the error message "<ErrorMessage>"
 
-Scenario: As a user, I shouldn't able to add languages and it's level by not choosing the language level
-	When I click Add New button, enter the language field, not choosing the language level and click the Add button
-	Then I should see "Please enter language and level" error message
+Examples:
+	| Language   | LanguageLevel  | ErrorMessage     |
+	| fghghjhkjk | Basic          | Invalid Language |
+	| 4345679989 | Conversational | Invalid Language |
+	| #@#$$%%^&& | Fluent         | Invalid Language |
+	| <space>    | Basic          | Invalid Language |
 
-Scenario: As a user, I shouldn't able to add languages by empty the language field and not choosing the language level
-	When I click Add New button, empty the language field, not choosing the language level and click the Add button
-	Then I should see "Please enter language and level" error message
+@negative @invalid
+Scenario: As a user, I want to update language with invalid input
+	When I Add the following language and select language level:
+		| Language | LanguageLevel    |
+		| Tamil    | Native/Bilingual |
+		| English  | Fluent           |
+		| French   | Basic            |
+		| German   | Conversational   |
+	And I update the following languages if they match the existing ones:
+		| ExistingLanguage | LanguageToUpdate | LanguageLevelToUpdate |
+		| Tamil            | fghghjhkjk       | Basic                 |
+		| English          | 4345679989       | Conversational        |
+		| French           | #@#$$%%^&&       | Fluent                |
+		| German           | <space>          | Native/Bilingual      |
+	Then I should see the "Invalid Language" message
 
-Scenario: As a user, I shouldn't able to update languages and it's level by giving language field empty
-	When I add language "French" and it's level "Fluent"
-	And I click edit icon of "French", leave the language field empty,choose the language level and click the Update button
-	Then I should see "Please enter language and level" error message
+Scenario: As a user, I shouldn't be able to add when session expired
+	When I want to add language as "Russian" and level as "Basic" when the session is expired
+	Then I should see "undefined" error message
 
-Scenario: As a user, I shouldn't able to update languages and it's level by not choosing the language level
-	When I add language "French" and it's level "Fluent"
-	And I click edit icon of "French", enter the language field, not choosing the language level and click the Update button
-	Then I should see "Please enter language and level" error message
+Scenario: As a user, I shouldn't be able to update when session expired
+	When I add language as "Greek" and level as "Basic" to update
+	And I want to update language the existing language as"Greek", language to update as "Chinese",and level to update as "Basic" when the session is expired
+	Then I should see "undefined" error message
 
-Scenario: As a user, I shouldn't able to update languages by empty the language field and not choosing the language level
-	When I add language "French" and it's level "Fluent"
-	And I click edit icon of "French", empty the language field, not choosing the language level and click the Update button
-	Then I should see "Please enter language and level" error message
-
+Scenario: As a user, I shouldn't be able to delete when session expired
+	When I add language "Italian" and level as "Basic" to delete
+	When I want to delete language "Italian" when the session is expired
+	Then I should see "There is an error when deleting language" error message
+	
 Scenario: As a user, I should able to Cancel the Add operation
 	When I click Add New button, enter the language "Spanish" and it's level "Native/Bilingual"
 	Then I should able to Cancel the operation and verify that the language "Spanish" shouldn't be added
@@ -43,34 +58,87 @@ Scenario: As a user, I should able to Cancel the Update operation
 	And I click cancel
 	Then the language "French" should remain unchanged with level "Fluent"
 
-Scenario: As a user, I shouldn't able to add the same language and different level
-	When I Add the following New Language and select New Language level:
-		| NewLanguage | NewLanguageLevel |
-		| Tamil       | Native/Bilingual |
-		| Tamil       | Fluent           |
-	Then I should see "Duplicated data" error message
+@negative
+Scenario Outline: As a user, I shouldn't be able to add languages and it's level by giving either or both of the fields are empty
+	When I add the languages "<Language>" and it's level "<Language Level>"in different combinations
+	Then I should see the "<Error Message>"
+Examples:
+	| Language | Language Level | Error Message                   |
+	|          | Basic          | Please enter language and level |
+	| Bengali  |                | Please enter language and level |
+	|          |                | Please enter language and level |
+
+Scenario Outline: As a user, I shouldn't be able to update languages and it's level by giving either or both of the fields are empty
+	When I add the language as "French" and level as "Fluent"
+	When I update existing language "<ExistingLanguage>" to "<LanguageToUpdate>" with level "<LanguageLevelToUpdate>"
+	Then I should see the "<ExpectedMessage>"
+Examples:
+	| ExistingLanguage | LanguageToUpdate | LanguageLevelToUpdate | ExpectedMessage                 |
+	| French           |                  | Fluent                | Please enter language and level |
+	| French           | Gujarati         |                       | Please enter language and level |
+	| French           |                  |                       | Please enter language and level |
+
+Scenario: As a user, I shouldn't able to add huge language name
+	When I try to add huge language name of length 1000 and language level as "Basic"
+	Then I should see warning message as "Language name is too long"
+
+@destructive
+Scenario: As a user, I shouldn't able to add the language name,if it's too long
+	When I try to add huge language name of length 5000 and language level as "Basic"
+	Then I should see warning message as "Language name is too long"
+
+Scenario: As a user, I shouldn't able to add the same language and different level in my profile
+	When I add language as "Tamil" and level as "Native/Bilingual"
+	And when I add the same language and choose different language level
+		| Language | LanguageLevel  |
+		| Tamil    | Conversational |
+	Then I should able to see the "Duplicated data" in my profile
 
 Scenario: As a user, I shouldn't able to add the same language and same level
-	When I Add an existing language and select a language level:
-		| NewLanguage | NewLanguageLevel |
-		| Tamil       | Native/Bilingual |
-		| Tamil       | Native/Bilingual |
-	Then I should see "This language is already exist in your language list" error message
+When I add language as "Tamil" and level as "Native/Bilingual"
+	And when I add the same language and choose same language level
+		| Language | LanguageLevel    |
+		| Tamil    | Native/Bilingual |
+	Then I should able to see the "This language is already exist in your language list." in my profile
 
-Scenario: As a user, I want to Edit the existing languages by giving same language and same level in my profile
-	When I update the language "Tamil" with same value
-	Then I should see "This language is already added to your language list." error message
+ Scenario:As a user, I shouldn't be able to Edit the existing languages by giving same language and same level in my profile
+	When I add language as "Tamil" and level as "Native/Bilingual"
+	And when I update the same language and same language level:
+		| ExistingLanguage | LanguageToUpdate | LanguageLevelToUpdate |
+		| Tamil            | Tamil            |Native/Bilingual     |
+	Then I should able to see the "This language is already added to your language list." in my profile
 
-Scenario: As a user, I shouldn't be able to add when session expired
-	When I want to add language as "Russian" and level as "Basic" when the session is expired
-	Then I should see "undefined" error message
 
-Scenario: As a user, I shouldn't be able to update when session expired
-    When I add language as "Greek" and level as "Basic"
-	And I want to update language the existing language as"Greek", language to update as "Chinese",and level to update as "Basic" when the session is expired
-	Then I should see "undefined" error message
 
-Scenario: As a user, I shouldn't be able to delete when session expired
-   When  I add language "Italian" and level as "Basic"
-	When I want to delete language "Italian" when the session is expired
-	Then I should see "There is an error when deleting language" error message
+
+
+
+
+#Scenario Outline: As a user, I shouldn't able to add the same language and different level
+#	When I Add the language "<Language>" and select language level "<LanguageLevel>"
+#	Then I should able to see the "<ExpectedMessage>" message
+#	Examples:
+#	| Language | LanguageLevel    | ExpectedMessage          |
+#	| Tamil    | Native/Bilingual | Tamil has been added to your languages|
+#	| Tamil    | Fluent           | Duplicated data      |
+
+#@destructive
+#Scenario Outline: As a user, I shouldn't be able to add large data as a language
+#	When I add a language with <Length> characters and level "<Level>"
+#	Then I should see the error message "<ExpectedMessage>"
+#Examples:
+#	| Length | Level          | ExpectedMessage           |
+#	| 20     | Basic          | Language name is too long |
+#	| 30     | Conversational | Language name is too long |
+#	| 50     | Fluent         | Language name is too long |
+#
+#@destructive
+#Scenario Outline: As a user, I shouldn't be able to update large data as a language
+#	When I add language as "Turkish" and level as "Basic"
+#	When I update existing language "Turkish" with <Length> characters and level "<Level>"
+#	Then I should see the error message "<ExpectedMessage>"
+#Examples:
+#	| Length | Level          | ExpectedMessage           |
+#	| 2000   | Basic          | Language name is too long |
+#	| 3000   | Conversational | Language name is too long |
+#	| 5000   | Fluent         | Language name is too long |
