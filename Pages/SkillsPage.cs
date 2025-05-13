@@ -4,13 +4,13 @@ using SeleniumExtras.WaitHelpers;
 
 namespace qa_dotnet_cucumber.Pages
 {
-    public class SkillsPage
+    public class SkillPage
     {
         private readonly IWebDriver _driver;
         private readonly WebDriverWait _wait;
         public IWebDriver Driver { get { return _driver; } }
 
-        public SkillsPage(IWebDriver driver)  //Inject the driver directly
+        public SkillPage(IWebDriver driver)  //Inject the driver directly
         {
             _driver = driver;
             _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(5));
@@ -45,13 +45,13 @@ namespace qa_dotnet_cucumber.Pages
             skillsElement.Click();
         }
 
-        public void AddNewSkillsAndLevel(string skills, string skillLevel = "Beginner")
+        public void AddSkillAndLevel(string skill, string skillLevel)
         {
-            EnterNewSkillsAndLevelToAdd(skills, skillLevel);
+            EnterSkillAndLevelToAdd(skill, skillLevel);
             ClickAddButton();
         }
 
-        public void EnterNewSkillsAndLevelToAdd(string skills, string skillLevel)
+        public void EnterSkillAndLevelToAdd(string skill, string skillLevel)
         {
             //Add New Skills
             var skillsTable = _wait.Until(ExpectedConditions.ElementIsVisible(_skillsTable));
@@ -60,7 +60,7 @@ namespace qa_dotnet_cucumber.Pages
 
             //Enter Skills
             var addSkillsElement = _wait.Until(ExpectedConditions.ElementToBeClickable(_addSkillsField));
-            addSkillsElement.SendKeys(skills);
+            addSkillsElement.SendKeys(skill);
 
             //Select Skill Level
             var selectSkillLevelDropDown = _wait.Until(ExpectedConditions.ElementToBeClickable(_selectSkillLevel));
@@ -175,10 +175,10 @@ namespace qa_dotnet_cucumber.Pages
             clickCancelUpdate.Click();
         }
 
-        public void DeleteSpecificSkills(string skillsToBeDeleted)    //To delete the specific skill 
+        public void DeleteSpecificSkill(string skillsToBeDeleted)    //To delete the specific skill 
         {
-            if (skillsToBeDeleted == null || !skillsToBeDeleted.Any()) //To avoid object reference null exception
-                throw new ArgumentException("Language list is empty or null");
+            if (string.IsNullOrWhiteSpace(skillsToBeDeleted)) //To avoid object reference null exception
+                throw new ArgumentException("Skill list is empty or null");
 
             var languageTable = _wait.Until(ExpectedConditions.ElementIsVisible(_skillsTable));
             var row = languageTable.FindElement(By.XPath($".//tr[td[normalize-space(text())='{skillsToBeDeleted}']]"));
@@ -379,7 +379,7 @@ namespace qa_dotnet_cucumber.Pages
             }
         }
 
-        public string GetUpdatedSkillSuccessMessage(string updateSkill)   //To get success message after updating skills for validation
+        public string GetSuccessMessageForUpdateSkill(string updateSkill)   //To get success message after updating skills for validation
         {
             var successMessageForUpdateSkill = _wait.Until(ExpectedConditions.ElementIsVisible(By.XPath($"//div[@class='ns-box-inner' and contains(text(), '{updateSkill} has been updated to your skills')]")));
             return successMessageForUpdateSkill.Text;

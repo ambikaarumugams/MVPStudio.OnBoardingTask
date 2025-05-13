@@ -1,5 +1,4 @@
-﻿using OpenQA.Selenium.BiDi.Modules.Log;
-using qa_dotnet_cucumber.Pages;
+﻿using qa_dotnet_cucumber.Pages;
 using Reqnroll;
 
 namespace qa_dotnet_cucumber.Steps
@@ -41,13 +40,13 @@ namespace qa_dotnet_cucumber.Steps
             {
                 expectedAddLanguages.Add(language.Language);      //add the input language as an expected and add it to the expectedAddLanguages List
                 _languagePage.AddNewLanguageAndLevel(language.Language, language.LanguageLevel);
-                var successMessageAfterLanguageIsBeingAdded = _languagePage.GetSuccessMessageForAddNew(language.Language);
+                var successMessageAfterLanguageIsBeingAdded = _languagePage.GetSuccessMessageForAddNewLanguage(language.Language);
                 actualAddLanguages.Add(successMessageAfterLanguageIsBeingAdded);    // add the success message to the actualAddLanguages List
             }
             _scenarioContext.Set(actualAddLanguages, "ActualAddLanguages");   //Store it in scenarioContext for assertion 
             _scenarioContext.Set(expectedAddLanguages, "ExpectedAddLanguages");  //Store it in scenarioContext for assertion
             _scenarioContext.Set(expectedAddLanguages, "LanguagesToCleanup");    //Store the languages that I've added to retrieve it in hooks to clean up the stored data
-          //  _scenarioContext.Set(languageTable, "ExpectedTable");   // To set values in scenario context as a table for assertion
+          //_scenarioContext.Set(languageTable, "ExpectedTable");   // To set values in scenario context as a table for assertion
         }
 
         [When("I should see the languages and verify it has been added successfully")]   //Success message validation
@@ -84,7 +83,7 @@ namespace qa_dotnet_cucumber.Steps
             {
                 expectedAddLanguagesToEdit.Add(addLanguageToEdit.Language);
                 _languagePage.AddNewLanguageAndLevel(addLanguageToEdit.Language, addLanguageToEdit.LanguageLevel);
-                var successMessage = _languagePage.GetSuccessMessageForAddNew(addLanguageToEdit.Language);
+                var successMessage = _languagePage.GetSuccessMessageForAddNewLanguage(addLanguageToEdit.Language);
                 actualAddLanguagesToEdit.Add(successMessage);
             }
             _scenarioContext.Set(expectedAddLanguagesToEdit, "ExpectedAddLanguagesToEdit");
@@ -99,7 +98,7 @@ namespace qa_dotnet_cucumber.Steps
             foreach (var expectedAddLanguage in expectedAddLanguages)
             {
                 Assert.That(actualAddLanguages.Any(actual => actual.Contains(expectedAddLanguage)), Is.True,
-                  $"Expected a message contains'{expectedAddLanguage}',but not found");
+                  $"Expected message contains'{expectedAddLanguage}',but not found");
             }
         }
 
@@ -130,7 +129,7 @@ namespace qa_dotnet_cucumber.Steps
             foreach (var expectedUpdateLanguage in expectedUpdatedLanguages)
             {
                 Assert.That(actualUpdatedLanguages.Any(actual => actual.Contains(expectedUpdateLanguage)),
-                    Is.True, $"Expected a message contains'{expectedUpdateLanguage}',but not found");
+                    Is.True, $"Expected message contains'{expectedUpdateLanguage}',but not found");
             }
             Assert.That(_languagePage.GetAllUpdatedLanguages(), Is.SupersetOf(expectedUpdatedLanguages), "The language hasn't updated successfully");
         }
@@ -175,7 +174,7 @@ namespace qa_dotnet_cucumber.Steps
         public void WhenIAddLanguageAsAndLevelAs(string language, string level) //Add the language and level
         {
             _languagePage.AddNewLanguageAndLevel(language, level);
-            var successMessage = _languagePage.GetSuccessMessageForAddNew(language);
+            var successMessage = _languagePage.GetSuccessMessageForAddNewLanguage(language);
             Console.WriteLine(successMessage);
             _scenarioContext.Set(new List<string>{language},"ActualMessage");       //I'm storing this to clean up in different step
         }
@@ -202,10 +201,13 @@ namespace qa_dotnet_cucumber.Steps
         {
             var actualList = _scenarioContext.Get<List<string>>("ActualSameLanguageAndDifferentLevelForUpdate");
             var expectedList = _scenarioContext.Get<List<string>>("ExpectedSameLanguageAndDifferentLevelForUpdate");
-            Console.WriteLine(expectedList);
+            //foreach (var exp in expectedList)
+            //{
+            //    Console.WriteLine(exp);
+            //}
             var actualMessage = actualList.FirstOrDefault();
             var expectedMessage = expectedList.FirstOrDefault();
-            Assert.That(actualMessage.Contains(expectedMessage), $"Expected Message '{expectedMessage}' hasn't updated, but got '{actualMessage}'");
+            Assert.That(actualMessage,Does.Contain(expectedMessage), $"Expected Message '{expectedMessage}' hasn't updated, but got '{actualMessage}'");
         }
 
         [When("I try to add a language {string} with level {string}")]     //Add invalid languages like random strings, numbers, special characters and empty space
@@ -218,7 +220,7 @@ namespace qa_dotnet_cucumber.Steps
             }
 
             _languagePage.AddNewLanguageAndLevel(language, level);
-            var successMessage = _languagePage.GetSuccessMessageForAddNew(language);
+            var successMessage = _languagePage.GetSuccessMessageForAddNewLanguage(language);
             _scenarioContext.Set(successMessage, "ActualLanguages");
             _scenarioContext.Set(new List<string> { language }, "LanguagesToCleanup");  //Clean up 
         }
@@ -228,7 +230,7 @@ namespace qa_dotnet_cucumber.Steps
         {
             var longLanguageName = new string('a', length);
             _languagePage.PassingHugeInputUsingJavaScript(longLanguageName,level);
-            var successMessage = _languagePage.GetSuccessMessageForAddNew(longLanguageName);
+            var successMessage = _languagePage.GetSuccessMessageForAddNewLanguage(longLanguageName);
             _scenarioContext.Set(successMessage, "ActualLanguages");
             _scenarioContext.Set(new List<string> { longLanguageName }, "LanguagesToCleanup");
         }
@@ -362,7 +364,7 @@ namespace qa_dotnet_cucumber.Steps
         {
             string hugeLanguageName = new string('e', length);
             _languagePage.AddNewLanguageAndLevel(hugeLanguageName, level);
-            var successMessage = _languagePage.GetSuccessMessageForAddNew(hugeLanguageName);
+            var successMessage = _languagePage.GetSuccessMessageForAddNewLanguage(hugeLanguageName);
             _scenarioContext["ActualMessage"] = successMessage;
             _scenarioContext.Set(new List<string> { hugeLanguageName }, "LanguagesToCleanup");
         }
@@ -451,68 +453,26 @@ namespace qa_dotnet_cucumber.Steps
             Assert.That(actual, Is.EqualTo(expectedMessage), $"Expected message {expectedMessage} isn't found");
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //[When("I Add an existing language and select a language level:")]
-        //public void WhenIAddAnExistingLanguageAndSelectALanguageLevel(Table languageTable)
-        //{
-        //    _languagePage.DeleteAllLanguages(); //Delete all the languages in the list before adding new
-
-        //    var languagesToAdd = languageTable.CreateSet<AddLanguage>();
-        //    foreach (var addNewList in languagesToAdd)
-        //    {
-        //        _languagePage.AddNewLanguageAndLevel(addNewList.Language, addNewList.LanguageLevel);
-        //    }
-        //}
-
-        
-        //[When("I click edit icon of language, and update the languages {string},choose the language level {string} and click the Update button")]
-        //public void WhenIClickEditIconOfLanguageAndUpdateTheLanguagesChooseTheLanguageLevelAndClickTheUpdateButton(string languageToUpdate, string languageLevelToUpdate)
-        //{
-        //  Console.WriteLine("Hi");   
-        //}
-
-
-       
-
-
-        //[When("I add language {string} and level as {string}")]
-        //public void WhenIAddLanguageAndLevelAs(string language, string level)
-        //{
-        //    _languagePage.DeleteAllLanguages();
-        //    _languagePage.AddNewLanguageAndLevel(language, level);
-        //}
-
-
-
-
-        
-        //[When("I update existing language {string} with {int} characters and level {string}")]
-        //public void WhenIUpdateExistingLanguageWithCharactersAndLevel(string existingLanguage, int length, string level)
+        //[When("I update existing language {string} with huge language name of length {int} and language level as {string}")]
+        //public void WhenIUpdateExistingLanguageWithHugeLanguageNameOfLengthAndLanguageLevelAs(string existingLanguage, int length, string level)
         //{
         //    var longLanguageName = new string('a', length);
         //    _languagePage.PassingHugeInputUsingJavaScriptForUpdate(existingLanguage, longLanguageName, level);
         //    var successMessage = _languagePage.GetSuccessMessageForUpdate(longLanguageName);
-        //    _scenarioContext["ActualMessage"] = successMessage;
+        //    _scenarioContext.Set(successMessage, "ActualLanguages");
+        //    _scenarioContext.Set(new List<string> { longLanguageName }, "LanguagesToCleanup");
         //}
 
+
+        [When("I update existing language {string} with  huge language name of length {int} and language level as {string}")]
+        public void WhenIUpdateExistingLanguageWithHugeLanguageNameOfLengthAndLanguageLevelAs(string existingLanguage, int length, string level)
+        {
+            var longLanguageName = new string('a', length);
+            _languagePage.PassingHugeInputUsingJavaScriptForUpdate(existingLanguage, longLanguageName, level);
+            var successMessage = _languagePage.GetSuccessMessageForUpdate(longLanguageName);
+            _scenarioContext.Set(successMessage, "ActualLanguages");
+            _scenarioContext.Set(new List<string> { longLanguageName }, "LanguagesToCleanup");
+        }
     }
 }
 

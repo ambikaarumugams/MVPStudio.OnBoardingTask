@@ -34,24 +34,29 @@ Scenario: As a user, I want to update language with invalid input
 		| German           | <space>          | Native/Bilingual      |
 	Then I should see the "Invalid Language" message
 
+@negative @valid
 Scenario: As a user, I shouldn't be able to add when session expired
 	When I want to add language as "Russian" and level as "Basic" when the session is expired
 	Then I should see "undefined" error message
 
+@negative @valid
 Scenario: As a user, I shouldn't be able to update when session expired
 	When I add language as "Greek" and level as "Basic" to update
 	And I want to update language the existing language as"Greek", language to update as "Chinese",and level to update as "Basic" when the session is expired
 	Then I should see "undefined" error message
 
+@negative @valid
 Scenario: As a user, I shouldn't be able to delete when session expired
 	When I add language "Italian" and level as "Basic" to delete
 	When I want to delete language "Italian" when the session is expired
 	Then I should see "There is an error when deleting language" error message
-	
+
+@negative @valid	
 Scenario: As a user, I should able to Cancel the Add operation
 	When I click Add New button, enter the language "Spanish" and it's level "Native/Bilingual"
 	Then I should able to Cancel the operation and verify that the language "Spanish" shouldn't be added
 
+@negative @valid
 Scenario: As a user, I should able to Cancel the Update operation
 	When I add language "French" and it's level "Fluent"
 	And I click edit icon of "French" and Update level to "Japanese" and level to "Native/Bilingual"
@@ -68,6 +73,7 @@ Examples:
 	| Bengali  |                | Please enter language and level |
 	|          |                | Please enter language and level |
 
+@negative
 Scenario Outline: As a user, I shouldn't be able to update languages and it's level by giving either or both of the fields are empty
 	When I add the language as "French" and level as "Fluent"
 	When I update existing language "<ExistingLanguage>" to "<LanguageToUpdate>" with level "<LanguageLevelToUpdate>"
@@ -78,6 +84,7 @@ Examples:
 	| French           | Gujarati         |                       | Please enter language and level |
 	| French           |                  |                       | Please enter language and level |
 
+@negative
 Scenario: As a user, I shouldn't able to add huge language name
 	When I try to add huge language name of length 1000 and language level as "Basic"
 	Then I should see warning message as "Language name is too long"
@@ -87,6 +94,7 @@ Scenario: As a user, I shouldn't able to add the language name,if it's too long
 	When I try to add huge language name of length 5000 and language level as "Basic"
 	Then I should see warning message as "Language name is too long"
 
+@negative @valid
 Scenario: As a user, I shouldn't able to add the same language and different level in my profile
 	When I add language as "Tamil" and level as "Native/Bilingual"
 	And when I add the same language and choose different language level
@@ -94,19 +102,45 @@ Scenario: As a user, I shouldn't able to add the same language and different lev
 		| Tamil    | Conversational |
 	Then I should able to see the "Duplicated data" in my profile
 
+@negative @valid
 Scenario: As a user, I shouldn't able to add the same language and same level
-When I add language as "Tamil" and level as "Native/Bilingual"
+	When I add language as "Tamil" and level as "Native/Bilingual"
 	And when I add the same language and choose same language level
 		| Language | LanguageLevel    |
 		| Tamil    | Native/Bilingual |
 	Then I should able to see the "This language is already exist in your language list." in my profile
 
- Scenario:As a user, I shouldn't be able to Edit the existing languages by giving same language and same level in my profile
+@negative @valid
+Scenario: As a user, I shouldn't be able to Edit the existing languages by giving same language and same level in my profile
 	When I add language as "Tamil" and level as "Native/Bilingual"
 	And when I update the same language and same language level:
 		| ExistingLanguage | LanguageToUpdate | LanguageLevelToUpdate |
-		| Tamil            | Tamil            |Native/Bilingual     |
+		| Tamil            | Tamil            | Native/Bilingual      |
 	Then I should able to see the "This language is already added to your language list." in my profile
+
+
+
+
+
+
+
+
+
+@destructive
+Scenario Outline: As a user, I shouldn't be able to update huge language name
+	When I add language as "Turkish" and level as "Basic"
+	When I update existing language "Turkish" with huge language name of length 200 and language level as "Basic" 
+	Then I should see the error message " Language name is too long "
+
+@destructive
+Scenario: As a user, I shouldn't be able to update large data as a language
+	When I add language as "Turkish" and level as "Basic"
+	When I update existing language "Turkish" with  huge language name of length 5000 and language level as "Basic" 
+	Then I should see the error message " Language name is too long "
+
+
+
+
 
 
 
@@ -122,23 +156,4 @@ When I add language as "Tamil" and level as "Native/Bilingual"
 #	| Tamil    | Native/Bilingual | Tamil has been added to your languages|
 #	| Tamil    | Fluent           | Duplicated data      |
 
-#@destructive
-#Scenario Outline: As a user, I shouldn't be able to add large data as a language
-#	When I add a language with <Length> characters and level "<Level>"
-#	Then I should see the error message "<ExpectedMessage>"
-#Examples:
-#	| Length | Level          | ExpectedMessage           |
-#	| 20     | Basic          | Language name is too long |
-#	| 30     | Conversational | Language name is too long |
-#	| 50     | Fluent         | Language name is too long |
-#
-#@destructive
-#Scenario Outline: As a user, I shouldn't be able to update large data as a language
-#	When I add language as "Turkish" and level as "Basic"
-#	When I update existing language "Turkish" with <Length> characters and level "<Level>"
-#	Then I should see the error message "<ExpectedMessage>"
-#Examples:
-#	| Length | Level          | ExpectedMessage           |
-#	| 2000   | Basic          | Language name is too long |
-#	| 3000   | Conversational | Language name is too long |
-#	| 5000   | Fluent         | Language name is too long |
+

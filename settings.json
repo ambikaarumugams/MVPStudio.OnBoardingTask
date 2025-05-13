@@ -1,6 +1,6 @@
 {
   "Browser": {
-    "Type": "Chrome",
+    "Type": "Edge",
     "Headless": false,
     "TimeoutSeconds": 30
   },
