@@ -24,7 +24,7 @@ namespace qa_dotnet_cucumber.Hooks
         private ExtentTest? _test;
         private static readonly object _reportLock = new object();
         private IWebDriver _driver;
-       
+
         public static TestSettings Settings => _settings;
 
         public Hooks(IObjectContainer objectContainer)
@@ -58,17 +58,17 @@ namespace qa_dotnet_cucumber.Hooks
         {
             Console.WriteLine("Debugger launched.");
             Console.WriteLine($"Starting {scenarioContext.ScenarioInfo.Title} on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
-           
-           switch (_settings.Browser.Type.ToLower())     //Check the browser type which is in the settings.json
+
+            switch (_settings.Browser.Type.ToLower())     //Check the browser type which is in the settings.json
             {
                 case "chrome":
                     new DriverManager().SetUpDriver(new ChromeConfig());  //download chrome driver
                     var chromeOptions = new ChromeOptions();    //chrome options for headless mode execution
-                    if (_settings.Browser.Headless)  
+                    if (_settings.Browser.Headless)
                     {
                         chromeOptions.AddArgument("--headless");
-                    }  
-                    _driver = new ChromeDriver(chromeOptions); 
+                    }
+                    _driver = new ChromeDriver(chromeOptions);
                     break;
 
                 case "firefox":
@@ -147,12 +147,12 @@ namespace qa_dotnet_cucumber.Hooks
                         {
                             if (languages != null && languages.Any())        //Check if the languages is not null and it has any value
                             {
-                                    var languagePage = _objectContainer.Resolve<LanguagePage>();   //retrieve the language page
-                                    foreach (var language in languages)  //Delete the languages after each scenario which we've given as input
-                                    {
-                                        languagePage.DeleteSpecificLanguage(language);
-                                    }
-                                    Console.WriteLine($"Deleted {languages.Count} languages for this scenario");  //Check the count of languages deleted
+                                var languagePage = _objectContainer.Resolve<LanguagePage>();   //retrieve the language page
+                                foreach (var language in languages)  //Delete the languages after each scenario which we've given as input
+                                {
+                                    languagePage.DeleteSpecificLanguage(language);
+                                }
+                                Console.WriteLine($"Deleted {languages.Count} languages for this scenario");  //Check the count of languages deleted
                             }
                             else
                             {
@@ -164,13 +164,13 @@ namespace qa_dotnet_cucumber.Hooks
                     {
                         if (scenarioContext.TryGetValue("SkillsToCleanup", out List<string>? skills))  //Get the value of "SkillsToCleanup"
                         {
-                            if (skills != null && skills.Any())   
+                            if (skills != null && skills.Any())
                             {
                                 var skillsPage = _objectContainer.Resolve<SkillPage>();
                                 foreach (var skill in skills)   //Delete the skill after each scenario 
                                 {
                                     skillsPage.DeleteSpecificSkill(skill);
-                                }  
+                                }
                                 Console.WriteLine($"Deleted {skills.Count} skills for this scenario");
                             }
                             else

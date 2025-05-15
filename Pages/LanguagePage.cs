@@ -33,7 +33,6 @@ namespace qa_dotnet_cucumber.Pages
         private readonly By _updateButton = By.XPath(".//input[@value='Update']");
         private readonly By _cancelUpdateButton = By.XPath("//span[@class='buttons-wrapper']//input[@value='Cancel']");
 
-
         //Action Methods
         public void NavigateToTheProfilePage()    //Navigate to the profile page
         {
@@ -103,7 +102,7 @@ namespace qa_dotnet_cucumber.Pages
 
         public void DeleteSpecificLanguage(string languageToBeDeleted) //To delete the specific language
         {
-            if (string.IsNullOrWhiteSpace(languageToBeDeleted))  //To avoid object reference null exception
+            if (string.IsNullOrEmpty(languageToBeDeleted))  //To avoid object reference null exception
                 throw new ArgumentException("Language list is empty or null");
 
             var languageTable = _wait.Until(ExpectedConditions.ElementIsVisible(_languageTable));
@@ -212,7 +211,7 @@ namespace qa_dotnet_cucumber.Pages
 
             //Enter the language
             var addLanguagesElement = _wait.Until(ExpectedConditions.ElementToBeClickable(_addLanguagesField));
-            if (!string.IsNullOrWhiteSpace(language))
+            if (!string.IsNullOrWhiteSpace(language))   //Apply the condition if the string is not null or white space
             {
                 addLanguagesElement.SendKeys(language);
             }
@@ -226,9 +225,8 @@ namespace qa_dotnet_cucumber.Pages
             }
             else
             {
-                selectElement.SelectByIndex(0);
+                selectElement.SelectByIndex(0);   //Passing the index if the level is empty, to choose "Select Language Level" 
             }
-
             ClickAddButton();
         }
 
@@ -257,7 +255,7 @@ namespace qa_dotnet_cucumber.Pages
                 SelectElement selectLevel = new SelectElement(selectLanguageLevel);
                 if (!string.IsNullOrWhiteSpace(languageLevelToUpdate))
                 {
-                    selectLevel.SelectByText("Fluent");
+                    selectLevel.SelectByText(languageLevelToUpdate);
                     //selectLevel.SelectByValue("");
                 }
                 else
@@ -347,6 +345,7 @@ namespace qa_dotnet_cucumber.Pages
         {
             try
             {
+                Thread.Sleep(5000);
                 var successMessageForUpdate = _wait.Until(ExpectedConditions.ElementIsVisible(By.XPath($"//div[@class='ns-box-inner' and  contains(text(), '{languageToBeUpdated} has been updated to your languages')]")));
                 return successMessageForUpdate.Text;
             }
@@ -419,31 +418,6 @@ namespace qa_dotnet_cucumber.Pages
             }
         }
 
-        public string GetToastMessage()    //To get both success and error message
-        {
-            try
-            {
-                // Attempt to find a success message
-                Thread.Sleep(8000);
-                var successElement = _wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//div[contains(@class,'ns-type-success') and contains(@class,'ns-show')]//div[@class='ns-box-inner']")));
-                return successElement.Text;
-            }
-            catch (WebDriverTimeoutException)
-            {
-                try
-                {
-                    //Thread.Sleep(5000);
-                    var popUpMessageElement = _wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//div[contains(@class, 'ns-type-error') and contains(@class, 'ns-show')]/div[@class='ns-box-inner']")));
-                    return popUpMessageElement.Text; // Found the Error message
-                }
-                catch (WebDriverTimeoutException)
-                {
-                    // If neither message is found, return an empty string
-                    return string.Empty;
-                }
-            }
-        }
-
         public bool IsCancelButtonNotDisplayed() //Check the visibility of cancel button 
         {
             try
@@ -480,56 +454,7 @@ namespace qa_dotnet_cucumber.Pages
             {
                 return true;
             }
-
         }
-
-        public void PassingHugeInputUsingJavaScript(string language, string level) //Passing huge language name to add using Javascript executor instead of send keys
-        {
-            //Add Languages
-            var languageTable = _wait.Until(ExpectedConditions.ElementIsVisible(_languageTable));
-            var addNewElement = languageTable.FindElement(By.XPath(".//div[@class='ui teal button ' and normalize-space(text())='Add New']"));
-            addNewElement.Click();
-
-            //Enter Language
-            var addLanguagesElement = _wait.Until(ExpectedConditions.ElementToBeClickable(_addLanguagesField));
-            IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
-            js.ExecuteScript("arguments[0].value=arguments[1];", addLanguagesElement, language); //To avoid exception
-            //Select Language Level
-            var selectLanguageLevelDropDown = _wait.Until(ExpectedConditions.ElementToBeClickable(_selectLanguageLevel));
-            SelectElement selectElement = new SelectElement(selectLanguageLevelDropDown);
-            selectElement.SelectByText(level);
-            ClickAddButton();
-        }
-
-        public void PassingHugeInputUsingJavaScriptForUpdate(string existingLanguage, string languageToUpdate, string level)//Passing huge language name to update using Javascript executor instead of send keys
-        {
-            try
-            {
-                var languageTable = _wait.Until(ExpectedConditions.ElementIsVisible(_languageTable));
-                var row = languageTable.FindElement(By.XPath($".//tr[td[normalize-space(text())='{existingLanguage}']]"));
-                var editIcon = row.FindElement(By.XPath(".//i[@class='outline write icon']"));
-                editIcon.Click();
-
-                var editableRow = languageTable.FindElement(By.XPath($".//tr[.//input[@type='text' and @value='{existingLanguage}']]"));
-                //Update the language
-                var addLanguageForUpdateElement = editableRow.FindElement(_addLanguageForUpdateField);
-                addLanguageForUpdateElement.SendKeys(Keys.Delete);
-                IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
-                js.ExecuteScript("arguments[0].value=arguments[1];", addLanguageForUpdateElement, languageToUpdate);
-
-                //Select Language Level
-                var selectLanguageLevelDropDown = _wait.Until(ExpectedConditions.ElementToBeClickable(_selectLanguageLevel));
-                SelectElement selectElement = new SelectElement(selectLanguageLevelDropDown);
-                selectElement.SelectByText(level);
-                editableRow.FindElement(_updateButton).Click();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-
-        }
-
     }
 }
 

@@ -7,7 +7,7 @@ Background:
 	Given I navigate to the profile page as a registered user
 
 @negative @invalid
-Scenario Outline: As a user, I want to add language with invalid input
+Scenario Outline: As a user,  I shouldn't be able to add language with invalid input
 	When I try to add a language "<Language>" with level "<LanguageLevel>"
 	Then I should see the error message "<ErrorMessage>"
 
@@ -19,7 +19,7 @@ Examples:
 	| <space>    | Basic          | Invalid Language |
 
 @negative @invalid
-Scenario: As a user, I want to update language with invalid input
+Scenario: As a user,  I shouldn't be able to update language with invalid input
 	When I Add the following language and select language level:
 		| Language | LanguageLevel    |
 		| Tamil    | Native/Bilingual |
@@ -118,20 +118,6 @@ Scenario: As a user, I shouldn't be able to Edit the existing languages by givin
 		| Tamil            | Tamil            | Native/Bilingual      |
 	Then I should able to see the "This language is already added to your language list." in my profile
 
-
-
-
-
-
-
-
-
-@destructive
-Scenario Outline: As a user, I shouldn't be able to update huge language name
-	When I add language as "Turkish" and level as "Basic"
-	When I update existing language "Turkish" with huge language name of length 200 and language level as "Basic" 
-	Then I should see the error message " Language name is too long "
-
 @destructive
 Scenario: As a user, I shouldn't be able to update large data as a language
 	When I add language as "Turkish" and level as "Basic"
@@ -144,16 +130,5 @@ Scenario: As a user, I shouldn't be able to update large data as a language
 
 
 
-
-
-
-
-#Scenario Outline: As a user, I shouldn't able to add the same language and different level
-#	When I Add the language "<Language>" and select language level "<LanguageLevel>"
-#	Then I should able to see the "<ExpectedMessage>" message
-#	Examples:
-#	| Language | LanguageLevel    | ExpectedMessage          |
-#	| Tamil    | Native/Bilingual | Tamil has been added to your languages|
-#	| Tamil    | Fluent           | Duplicated data      |
 
 
