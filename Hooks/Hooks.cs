@@ -6,10 +6,12 @@ using WebDriverManager;
 using WebDriverManager.DriverConfigs.Impl;
 using AventStack.ExtentReports;
 using AventStack.ExtentReports.Reporter;
-using System.IO;
 using System.Text.Json;
+using OpenQA.Selenium.Edge;
+using OpenQA.Selenium.Firefox;
 using qa_dotnet_cucumber.Config;
 using qa_dotnet_cucumber.Pages;
+
 namespace qa_dotnet_cucumber.Hooks
 {
     [Binding]
@@ -21,6 +23,7 @@ namespace qa_dotnet_cucumber.Hooks
         private static TestSettings _settings;
         private ExtentTest? _test;
         private static readonly object _reportLock = new object();
+        private IWebDriver _driver;
 
         public static TestSettings Settings => _settings;
 
@@ -53,20 +56,52 @@ namespace qa_dotnet_cucumber.Hooks
         [BeforeScenario]
         public void BeforeScenario(ScenarioContext scenarioContext)
         {
+            Console.WriteLine("Debugger launched.");
             Console.WriteLine($"Starting {scenarioContext.ScenarioInfo.Title} on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
-            new DriverManager().SetUpDriver(new ChromeConfig());
-            var chromeOptions = new ChromeOptions();
-            if (_settings.Browser.Headless)
-            {
-                chromeOptions.AddArgument("--headless");
-            }
-            var driver = new ChromeDriver(chromeOptions);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(_settings.Browser.TimeoutSeconds);
-            driver.Manage().Window.Maximize();
 
-            _objectContainer.RegisterInstanceAs<IWebDriver>(driver);
-            _objectContainer.RegisterInstanceAs(new NavigationHelper(driver));
-            _objectContainer.RegisterInstanceAs(new LoginPage(driver));
+            switch (_settings.Browser.Type.ToLower())     //Check the browser type which is in the settings.json
+            {
+                case "chrome":
+                    new DriverManager().SetUpDriver(new ChromeConfig());  //download chrome driver
+                    var chromeOptions = new ChromeOptions();    //chrome options for headless mode execution
+                    if (_settings.Browser.Headless)
+                    {
+                        chromeOptions.AddArgument("--headless");
+                    }
+                    _driver = new ChromeDriver(chromeOptions);
+                    break;
+
+                case "firefox":
+                    new DriverManager().SetUpDriver(new FirefoxConfig());
+                    var firefoxOptions = new FirefoxOptions();
+                    if (_settings.Browser.Headless)
+                    {
+                        firefoxOptions.AddArgument("--headless");
+                    }
+                    _driver = new FirefoxDriver(firefoxOptions);
+                    break;
+
+                case "edge":
+                    new DriverManager().SetUpDriver(new EdgeConfig());
+                    var edgeOptions = new EdgeOptions();
+                    if (_settings.Browser.Headless)
+                    {
+                        edgeOptions.AddArgument("--headless");
+                    }
+                    _driver = new EdgeDriver();
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unsupported Browser:{_settings.Browser.Type}");
+            }
+            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(_settings.Browser.TimeoutSeconds);
+            _driver.Manage().Window.Maximize();
+
+            _objectContainer.RegisterInstanceAs<IWebDriver>(_driver);
+            _objectContainer.RegisterInstanceAs(new NavigationHelper(_driver));
+            _objectContainer.RegisterInstanceAs(new LoginPage(_driver));
+            _objectContainer.RegisterInstanceAs(new LanguagePage(_driver));
+            _objectContainer.RegisterInstanceAs(new SkillPage(_driver));
 
             lock (_reportLock)
             {
@@ -100,11 +135,69 @@ namespace qa_dotnet_cucumber.Hooks
         }
 
         [AfterScenario]
-        public void AfterScenario()
+        public void CleanUpAfterScenario(ScenarioContext scenarioContext, FeatureContext featureContext)
         {
-            var driver = _objectContainer.Resolve<IWebDriver>();
-            driver?.Quit();
-            Console.WriteLine($"Finished scenario on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+            try
+            {
+                try
+                {
+                    if (featureContext.FeatureInfo.Tags.Contains("language"))     //Check if the feature tag name is language
+                    {
+                        if (scenarioContext.TryGetValue("LanguagesToCleanup", out List<string>? languages))   //Get the value of "LanguagesToCleanup" 
+                        {
+                            if (languages != null && languages.Any())        //Check if the languages is not null and it has any value
+                            {
+                                var languagePage = _objectContainer.Resolve<LanguagePage>();   //retrieve the language page
+                                foreach (var language in languages)  //Delete the languages after each scenario which we've given as input
+                                {
+                                    languagePage.DeleteSpecificLanguage(language);
+                                }
+                                Console.WriteLine($"Deleted {languages.Count} languages for this scenario");  //Check the count of languages deleted
+                            }
+                            else
+                            {
+                                Console.WriteLine("Clean up skipped: Language list is empty."); //Clean up skipped
+                            }
+                        }
+                    }
+                    else if (featureContext.FeatureInfo.Tags.Contains("skill"))  //Check if the feature tag name is skill
+                    {
+                        if (scenarioContext.TryGetValue("SkillsToCleanup", out List<string>? skills))  //Get the value of "SkillsToCleanup"
+                        {
+                            if (skills != null && skills.Any())
+                            {
+                                var skillsPage = _objectContainer.Resolve<SkillPage>();
+                                foreach (var skill in skills)   //Delete the skill after each scenario 
+                                {
+                                    skillsPage.DeleteSpecificSkill(skill);
+                                }
+                                Console.WriteLine($"Deleted {skills.Count} skills for this scenario");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Clean up skipped: Skill list is empty");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Clean up failed:{ex.Message}");
+                }
+
+                var driver = _objectContainer.Resolve<IWebDriver>();
+                if (driver != null)
+                {
+                    Console.WriteLine($"Cleaning up on Thread{Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+                    driver?.Quit();
+                    driver?.Dispose();
+                    Console.WriteLine($"Finished scenario on Thread {Thread.CurrentThread.ManagedThreadId} at {DateTime.Now}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Clean up failed:{ex.Message}");
+            }
         }
 
         [AfterTestRun]
